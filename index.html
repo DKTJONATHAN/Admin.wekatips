@@ -4,58 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weka Tips - Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .admin-container {
-            padding: 40px 0;
-        }
-        .upload-status {
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
-            display: none;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .verification {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-        #verificationSection {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            display: none;
-        }
-        #serverData {
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: monospace;
-        }
-        .data-mismatch {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .data-match {
-            color: #28a745;
-            font-weight: bold;
-        }
-    </style>
 </head>
 <body>
     <!-- Header -->
@@ -78,10 +26,16 @@
         <div class="container">
             <!-- Status Messages -->
             <div id="uploadStatus" class="upload-status"></div>
-            
+
+            <!-- Token Input -->
+            <div class="token-input">
+                <input type="password" id="githubToken" placeholder="Enter GitHub Token">
+                <button onclick="saveToken()">Save Token</button>
+            </div>
+
             <div class="section-header">
                 <h2 class="section-title">Update Today's Tips</h2>
-                <button onclick="verifyData()" class="btn btn-secondary" style="margin-left: auto;">Verify Server Data</button>
+                <button onclick="verifyData()" class="btn btn-secondary">Verify Server Data</button>
             </div>
 
             <div id="matchForms">
@@ -92,7 +46,7 @@
                 <button class="add-match-btn" onclick="addMatchForm()">Add Match</button>
                 <button class="save-btn" onclick="forceUpload()">Force Upload & Verify</button>
             </div>
-            
+
             <!-- Verification Section -->
             <div id="verificationSection">
                 <h3 style="margin-bottom: 15px;">Server Data Verification</h3>
@@ -113,20 +67,33 @@
     </main>
 
     <script>
+        // Configuration - Update these values
+        const REPO = 'your-username/your-repo-name'; // Format: username/repo
+        const FILE_PATH = 'data/tips.json'; // Path to your JSON file
+        const BRANCH = 'main'; // Your branch name
+
         // Load matches from localStorage or use default empty array
         let matchData = JSON.parse(localStorage.getItem('matchData')) || [];
+        let githubToken = localStorage.getItem('githubToken') || '';
 
         // On page load
         document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('githubToken').value = githubToken;
             generateMatchForms();
         });
+
+        // Token management
+        function saveToken() {
+            githubToken = document.getElementById('githubToken').value.trim();
+            localStorage.setItem('githubToken', githubToken);
+            alert('Token saved (local storage only)');
+        }
 
         function generateMatchForms() {
             const container = document.getElementById('matchForms');
             container.innerHTML = '';
 
             if (matchData.length === 0) {
-                // Add one empty form by default
                 addMatchForm();
                 return;
             }
@@ -202,7 +169,7 @@
                         <option value="Very High" ${match.confidence === 'Very High' ? 'selected' : ''}>Very High</option>
                     </select>
                 </div>
-                <button type="button" onclick="removeMatch(${index})" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Remove Match</button>
+                <button type="button" onclick="removeMatch(${index})" class="remove-btn">Remove Match</button>
             `;
             return form;
         }
@@ -230,11 +197,15 @@
             }
         }
 
-        // NEW: Force upload with verification
         async function forceUpload() {
+            if (!githubToken) {
+                alert("Please enter and save your GitHub token first!");
+                return;
+            }
+
             const statusEl = document.getElementById('uploadStatus');
             statusEl.style.display = 'none';
-            
+
             // 1. Collect all match data
             const newMatchData = [];
             for (let i = 0; i < matchData.length; i++) {
@@ -270,72 +241,93 @@
             matchData = newMatchData;
             localStorage.setItem('matchData', JSON.stringify(matchData));
 
-            // 2. Prepare data for server
+            // 2. Prepare data for GitHub
             const tipsData = {
                 matches: matchData,
                 updatedAt: new Date().toISOString()
             };
 
-            // 3. Upload to server
-            showStatus('Uploading data to server...', 'verification');
-            
+            // 3. Upload to GitHub
+            showStatus('Uploading to GitHub...', 'verification');
+
             try {
-                const response = await fetch('https://wekatips.netlify.app/.netlify/functions/save-tips', {
-                    method: 'POST',
+                // Get the current file SHA (required for update)
+                const getFile = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}?ref=${BRANCH}`, {
                     headers: { 
-                        'Content-Type': 'application/json',
-                        'x-secret': 'weka123' 
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (!getFile.ok) {
+                    throw new Error(`Failed to get file info: ${getFile.status}`);
+                }
+
+                const fileInfo = await getFile.json();
+                const fileSha = fileInfo.sha;
+
+                // Upload new content
+                const response = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(tipsData)
+                    body: JSON.stringify({
+                        message: `Update tips - ${new Date().toLocaleString()}`,
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2))),
+                        sha: fileSha,
+                        branch: BRANCH
+                    })
                 });
 
                 if (!response.ok) {
-                    throw new Error(await response.text());
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update file');
                 }
 
-                // 4. Verify on server
-                await verifyData();
-                showStatus('Data successfully uploaded and verified!', 'success');
+                showStatus('Successfully updated GitHub!', 'success');
+                setTimeout(() => verifyData(), 1500);
 
             } catch (error) {
-                showStatus(`Upload failed: ${error.message}`, 'error');
+                showStatus(`GitHub upload failed: ${error.message}`, 'error');
                 console.error('Upload error:', error);
             }
         }
 
-        // NEW: Verify data matches what was sent
         async function verifyData() {
             const verificationEl = document.getElementById('verificationSection');
             const serverDataEl = document.getElementById('serverData');
             const matchCountEl = document.getElementById('matchCountStatus');
             const dataMatchEl = document.getElementById('dataMatchStatus');
-            
+
             showStatus('Verifying server data...', 'verification');
             verificationEl.style.display = 'block';
 
             try {
                 // 1. Fetch current server data (with cache busting)
-                const response = await fetch('https://wekatips.netlify.app/data/tips.json?t=' + Date.now());
+                const response = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`);
                 if (!response.ok) throw new Error('Server returned ' + response.status);
-                
+
                 const serverData = await response.json();
-                
+
                 // 2. Display server data
                 serverDataEl.innerHTML = syntaxHighlight(serverData);
-                
+
                 // 3. Check match count
                 const serverMatchCount = serverData.matches?.length || 0;
                 const localMatchCount = matchData.length;
-                
+
                 matchCountEl.innerHTML = `Server matches: <b>${serverMatchCount}</b> | Local matches: <b>${localMatchCount}</b>`;
-                
+
                 if (serverMatchCount !== localMatchCount) {
                     matchCountEl.innerHTML += ' <span class="data-mismatch">(MISMATCH)</span>';
                     dataMatchEl.innerHTML = '<span class="data-mismatch">❌ Data mismatch detected</span>';
                 } else {
                     matchCountEl.innerHTML += ' <span class="data-match">(MATCHING)</span>';
-                    
-                    // 4. Deep comparison (optional)
+
+                    // 4. Deep comparison
                     const isDataIdentical = JSON.stringify(serverData.matches) === JSON.stringify(matchData);
                     if (isDataIdentical) {
                         dataMatchEl.innerHTML = '<span class="data-match">✅ Data matches perfectly</span>';
@@ -343,7 +335,7 @@
                         dataMatchEl.innerHTML = '<span class="data-mismatch">⚠️ Count matches but content differs</span>';
                     }
                 }
-                
+
             } catch (error) {
                 showStatus(`Verification failed: ${error.message}`, 'error');
                 serverDataEl.textContent = 'Could not load server data';
@@ -353,7 +345,6 @@
             }
         }
 
-        // Helper functions
         function showStatus(message, type) {
             const statusEl = document.getElementById('uploadStatus');
             statusEl.textContent = message;
@@ -366,10 +357,10 @@
                 try {
                     json = JSON.parse(json);
                 } catch (e) {
-                    return json; // Return as-is if not JSON
+                    return json;
                 }
             }
-            
+
             const jsonStr = JSON.stringify(json, null, 2);
             return jsonStr
                 .replace(/("[\w]+":)/g, '<span style="color:blue">$1</span>')
