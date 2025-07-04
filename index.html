@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weka Tips - Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            padding: 40px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">⚽</div>
+                    <div class="logo-text">
+                        <h1>Weka Tips Admin</h1>
+                        <p>Manage Daily Betting Tips</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-container">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Update Today's Tips</h2>
+            </div>
+
+            <div id="matchForms">
+                <!-- Match forms will be generated here -->
+            </div>
+
+            <button class="add-match-btn" onclick="addMatchForm()">Add Match</button>
+            <button class="save-btn" onclick="saveMatches()">Save All Matches</button>
+        </div>
+    </main>
+
+    <script>
+        // Load matches from localStorage or use default empty array
+        let matchData = JSON.parse(localStorage.getItem('matchData')) || [];
+
+        // On page load
+        document.addEventListener('DOMContentLoaded', function() {
+            generateMatchForms();
+        });
+
+        function generateMatchForms() {
+            const container = document.getElementById('matchForms');
+            container.innerHTML = '';
+            
+            if (matchData.length === 0) {
+                // Add one empty form by default
+                addMatchForm();
+                return;
+            }
+            
+            matchData.forEach((match, index) => {
+                const form = createMatchForm(match, index);
+                container.appendChild(form);
+            });
+        }
+
+        function createMatchForm(match, index) {
+            const form = document.createElement('div');
+            form.className = 'match-form';
+            form.innerHTML = `
+                <h3>Match ${index + 1}</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>League</label>
+                        <select id="league_${index}">
+                            <option value="Premier League" ${match.league === 'Premier League' ? 'selected' : ''}>Premier League</option>
+                            <option value="La Liga" ${match.league === 'La Liga' ? 'selected' : ''}>La Liga</option>
+                            <option value="Serie A" ${match.league === 'Serie A' ? 'selected' : ''}>Serie A</option>
+                            <option value="Bundesliga" ${match.league === 'Bundesliga' ? 'selected' : ''}>Bundesliga</option>
+                            <option value="Ligue 1" ${match.league === 'Ligue 1' ? 'selected' : ''}>Ligue 1</option>
+                            <option value="Champions League" ${match.league === 'Champions League' ? 'selected' : ''}>Champions League</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Time</label>
+                        <input type="time" id="time_${index}" value="${match.time || '15:00'}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Home Team</label>
+                        <input type="text" id="homeTeam_${index}" value="${match.homeTeam || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Away Team</label>
+                        <input type="text" id="awayTeam_${index}" value="${match.awayTeam || ''}" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tip</label>
+                        <select id="tip_${index}">
+                            <option value="Over 2.5 Goals" ${match.tip === 'Over 2.5 Goals' ? 'selected' : ''}>Over 2.5 Goals</option>
+                            <option value="Under 2.5 Goals" ${match.tip === 'Under 2.5 Goals' ? 'selected' : ''}>Under 2.5 Goals</option>
+                            <option value="BTTS" ${match.tip === 'BTTS' ? 'selected' : ''}>BTTS (Both Teams to Score)</option>
+                            <option value="Home Win" ${match.tip === 'Home Win' ? 'selected' : ''}>Home Win</option>
+                            <option value="Away Win" ${match.tip === 'Away Win' ? 'selected' : ''}>Away Win</option>
+                            <option value="Draw" ${match.tip === 'Draw' ? 'selected' : ''}>Draw</option>
+                            <option value="Over 3.5 Goals" ${match.tip === 'Over 3.5 Goals' ? 'selected' : ''}>Over 3.5 Goals</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Odds</label>
+                        <input type="text" id="odds_${index}" value="${match.odds || '1.75'}" placeholder="e.g., 1.75" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Confidence</label>
+                    <select id="confidence_${index}">
+                        <option value="High" ${match.confidence === 'High' ? 'selected' : ''}>High</option>
+                        <option value="Medium" ${match.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
+                        <option value="Very High" ${match.confidence === 'Very High' ? 'selected' : ''}>Very High</option>
+                    </select>
+                </div>
+                <button type="button" onclick="removeMatch(${index})" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Remove Match</button>
+            `;
+            return form;
+        }
+
+        function addMatchForm() {
+            const newMatch = {
+                league: "Premier League",
+                homeTeam: "",
+                awayTeam: "",
+                time: "15:00",
+                tip: "Over 2.5 Goals",
+                odds: "1.75",
+                confidence: "High"
+            };
+            matchData.push(newMatch);
+            generateMatchForms();
+        }
+
+        function removeMatch(index) {
+            if (matchData.length > 1) {
+                matchData.splice(index, 1);
+                generateMatchForms();
+            } else {
+                alert("You must have at least one match!");
+            }
+        }
+
+        function saveMatches() {
+            const newMatchData = [];
+            
+            for (let i = 0; i < matchData.length; i++) {
+                const league = document.getElementById(`league_${i}`)?.value;
+                const homeTeam = document.getElementById(`homeTeam_${i}`)?.value;
+                const awayTeam = document.getElementById(`awayTeam_${i}`)?.value;
+                const time = document.getElementById(`time_${i}`)?.value;
+                const tip = document.getElementById(`tip_${i}`)?.value;
+                const odds = document.getElementById(`odds_${i}`)?.value;
+                const confidence = document.getElementById(`confidence_${i}`)?.value;
+                
+                if (league && homeTeam && awayTeam && time && tip && odds && confidence) {
+                    newMatchData.push({
+                        league,
+                        homeTeam,
+                        awayTeam,
+                        time,
+                        tip,
+                        odds,
+                        confidence
+                    });
+                } else {
+                    alert('Please fill in all fields for Match ' + (i + 1));
+                    return;
+                }
+            }
+            
+            if (newMatchData.length > 0) {
+                matchData = newMatchData;
+                localStorage.setItem('matchData', JSON.stringify(matchData));
+                alert('Matches saved successfully! They will appear on the main page immediately.');
+            }
+        }
+    </script>
+</body>
+</html>
