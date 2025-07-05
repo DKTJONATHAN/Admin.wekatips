@@ -5,29 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin.wekatips - Management Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#7c3aed',
+                        danger: '#ef4444',
+                        success: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .match-enter { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } }
-        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .match-enter {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
         #serverData {
             white-space: pre-wrap;
-            word-break: break-all;
+            word-break: break-word;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
         }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Token Modal -->
     <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 class="text-xl font-bold mb-4">GitHub Authentication</h2>
-            <p class="text-gray-600 mb-2">Enter your GitHub Personal Access Token:</p>
-            <p class="text-xs text-gray-500 mb-3">(Requires <code class="bg-gray-100 px-1">repo</code> permissions)</p>
-            <input type="password" id="githubToken" placeholder="ghp_yourTokenHere" 
-                   class="w-full px-4 py-2 border rounded-lg mb-4 font-mono text-sm">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">GitHub Authentication</h2>
+                <button onclick="document.getElementById('tokenModal').classList.add('hidden')" 
+                        class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Personal Access Token</label>
+                <input type="password" id="githubToken" placeholder="ghp_yourTokenHere" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary font-mono text-sm">
+                <p class="text-xs text-gray-500 mt-1">Requires <code class="bg-gray-100 px-1 rounded">repo</code> permissions</p>
+            </div>
             <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('tokenModal').classList.add('hidden')" 
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
                 <button onclick="saveToken()" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">
                     Save Token
                 </button>
             </div>
@@ -37,22 +75,25 @@
 
     <!-- Main Admin Panel -->
     <div class="container mx-auto px-4 py-8">
-        <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 mb-8 shadow-lg">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-primary to-secondary text-white rounded-xl p-6 mb-8 shadow-lg">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="flex items-center space-x-4">
-                    <i class="fas fa-lock text-3xl"></i>
+                    <div class="bg-white bg-opacity-20 rounded-full w-12 h-12 flex items-center justify-center">
+                        <i class="fas fa-lock text-white text-xl"></i>
+                    </div>
                     <div>
                         <h1 class="text-2xl font-bold">Admin.wekatips</h1>
-                        <p class="text-blue-100">DKTJONATHAN Management Panel</p>
+                        <p class="text-blue-100 opacity-90">DKTJONATHAN Management Panel</p>
                     </div>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex flex-wrap gap-3">
                     <button onclick="verifyData()" 
-                            class="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition">
+                            class="px-4 py-2 bg-white text-primary rounded-lg font-medium hover:bg-gray-50 transition flex items-center">
                         <i class="fas fa-sync-alt mr-2"></i> Verify Data
                     </button>
-                    <button onclick="window.open('https://dktjonathan.github.io/wekatips', '_blank')" 
-                            class="px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition">
+                    <button onclick="window.open('https://dktjonathan.github.io/Wekatips', '_blank')" 
+                            class="px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition flex items-center">
                         <i class="fas fa-external-link-alt mr-2"></i> View Site
                     </button>
                 </div>
@@ -60,12 +101,12 @@
         </header>
 
         <!-- Status Alert -->
-        <div id="uploadStatus" class="hidden mb-6 p-4 rounded-lg"></div>
+        <div id="uploadStatus" class="hidden mb-6 p-4 rounded-lg border"></div>
 
         <!-- Token Status -->
-        <div id="tokenStatusBar" class="hidden bg-blue-50 text-blue-800 p-3 rounded-lg mb-6 flex justify-between items-center">
+        <div id="tokenStatusBar" class="hidden bg-blue-50 text-blue-800 p-3 rounded-lg mb-6 flex justify-between items-center border border-blue-100">
             <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
+                <i class="fas fa-check-circle mr-2 text-blue-600"></i>
                 <span>Authenticated with GitHub</span>
             </div>
             <button onclick="changeToken()" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
@@ -79,11 +120,13 @@
         <!-- Action Buttons -->
         <div class="fixed bottom-6 right-6 flex flex-col gap-3">
             <button onclick="addMatchForm()" 
-                    class="p-4 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition flex items-center justify-center">
+                    class="p-4 bg-success text-white rounded-full shadow-lg hover:bg-green-700 transition flex items-center justify-center tooltip"
+                    data-tooltip="Add Match">
                 <i class="fas fa-plus text-xl"></i>
             </button>
             <button onclick="forceUpload()" 
-                    class="p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center">
+                    class="p-4 bg-primary text-white rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center tooltip"
+                    data-tooltip="Publish Changes">
                 <i class="fas fa-cloud-upload-alt text-xl"></i>
             </button>
         </div>
@@ -91,7 +134,7 @@
         <!-- Verification Section -->
         <div id="verificationSection" class="hidden mt-12 bg-gray-50 p-6 rounded-xl border border-gray-200">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold">Server Data Verification</h3>
+                <h3 class="text-lg font-bold text-gray-800">Server Data Verification</h3>
                 <button onclick="hideVerification()" 
                         class="text-gray-500 hover:text-gray-700">
                     <i class="fas fa-times"></i>
@@ -101,10 +144,10 @@
                 <span id="matchCountStatus" class="font-medium"></span>
                 <span id="dataMatchStatus" class="ml-4"></span>
             </div>
-            <pre id="serverData" class="bg-white p-4 rounded-lg overflow-auto max-h-80 text-sm border border-gray-200"></pre>
+            <pre id="serverData" class="bg-white p-4 rounded-lg overflow-auto max-h-80 text-sm border border-gray-200 scrollbar-thin font-mono"></pre>
             <div class="mt-4 flex justify-end">
                 <button onclick="verifyData()" 
-                        class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center">
                     <i class="fas fa-sync-alt mr-2"></i> Refresh
                 </button>
             </div>
@@ -112,153 +155,194 @@
     </div>
 
     <script>
-        // Configuration - MUST UPDATE THESE
-        const REPO = 'DKTJONATHAN/wekatips';       // Your repository
-        const FILE_PATH = 'data/tips.json';        // Path to tips file
-        const BRANCH = 'main';                    // Branch to use
-        
-        // State
-        let matchData = JSON.parse(localStorage.getItem('matchData')) || [];
-        let githubToken = localStorage.getItem('githubToken') || '';
-        
-        // Initialize
+        // ===== CONFIGURATION ===== //
+        const CONFIG = {
+            REPO: 'DKTJONATHAN/Wekatips',   // Your repository
+            FILE_PATH: 'data/tips.json',     // Path to tips file
+            BRANCH: 'main',                  // Branch to use
+            CACHE_TIME: 300000               // 5 minutes cache
+        };
+
+        // ===== STATE MANAGEMENT ===== //
+        let state = {
+            matchData: JSON.parse(localStorage.getItem('matchData')) || [],
+            githubToken: localStorage.getItem('githubToken') || '',
+            lastFetchTime: null
+        };
+
+        // ===== INITIALIZATION ===== //
         document.addEventListener('DOMContentLoaded', function() {
-            if (!githubToken) {
-                document.getElementById('tokenModal').classList.remove('hidden');
+            // Check token on load
+            if (!state.githubToken) {
+                showTokenModal();
             } else {
                 initAdminPanel();
             }
+            
+            // Generate initial forms
             generateMatchForms();
+            
+            // Add tooltips
+            initTooltips();
         });
-        
-        // Token Functions
+
+        function initTooltips() {
+            document.querySelectorAll('.tooltip').forEach(el => {
+                const tooltip = el.getAttribute('data-tooltip');
+                el.addEventListener('mouseenter', () => {
+                    const tooltipEl = document.createElement('div');
+                    tooltipEl.className = 'absolute bg-black text-white text-xs py-1 px-2 rounded bottom-full mb-2 whitespace-nowrap';
+                    tooltipEl.textContent = tooltip;
+                    el.appendChild(tooltipEl);
+                    
+                    // Position tooltip
+                    const rect = el.getBoundingClientRect();
+                    tooltipEl.style.left = `50%`;
+                    tooltipEl.style.transform = 'translateX(-50%)';
+                    
+                    el.addEventListener('mouseleave', () => {
+                        tooltipEl.remove();
+                    }, { once: true });
+                });
+            });
+        }
+
+        // ===== TOKEN MANAGEMENT ===== //
+        function showTokenModal() {
+            document.getElementById('tokenModal').classList.remove('hidden');
+            document.getElementById('githubToken').focus();
+        }
+
         function saveToken() {
             const tokenInput = document.getElementById('githubToken');
-            githubToken = tokenInput.value.trim();
+            const token = tokenInput.value.trim();
             
-            if (!githubToken) {
-                showTokenStatus('Please enter a valid token', 'red');
+            // Validation
+            if (!token) {
+                showStatus('Please enter a token', 'error');
                 return;
             }
             
-            // Basic token validation
-            if (!githubToken.startsWith('ghp_') || githubToken.length < 30) {
-                showTokenStatus('Invalid token format', 'red');
+            if (!token.startsWith('ghp_') || token.length < 30) {
+                showStatus('Invalid token format', 'error');
                 return;
             }
             
-            localStorage.setItem('githubToken', githubToken);
-            showTokenStatus('✓ Token saved successfully!', 'green');
+            // Save token
+            state.githubToken = token;
+            localStorage.setItem('githubToken', token);
             
-            setTimeout(() => {
-                document.getElementById('tokenModal').classList.add('hidden');
-                initAdminPanel();
-            }, 1000);
+            // Update UI
+            document.getElementById('tokenModal').classList.add('hidden');
+            initAdminPanel();
+            showStatus('Token saved successfully', 'success');
         }
-        
+
         function changeToken() {
             if (confirm('Change GitHub token? This will require re-authentication.')) {
                 localStorage.removeItem('githubToken');
-                githubToken = '';
-                document.getElementById('tokenModal').classList.remove('hidden');
+                state.githubToken = '';
                 document.getElementById('tokenStatusBar').classList.add('hidden');
+                showTokenModal();
             }
         }
-        
-        function showTokenStatus(message, color) {
-            const statusEl = document.getElementById('tokenStatus');
-            statusEl.textContent = message;
-            statusEl.className = `mt-3 text-sm text-${color}-600`;
-        }
-        
+
         function initAdminPanel() {
             document.getElementById('tokenStatusBar').classList.remove('hidden');
-            // Enable admin features
-            document.querySelectorAll('.admin-feature').forEach(el => {
-                el.disabled = false;
-            });
         }
-        
-        // Match Form Functions
+
+        // ===== MATCH FORM MANAGEMENT ===== //
         function generateMatchForms() {
             const container = document.getElementById('matchForms');
             container.innerHTML = '';
             
-            if (matchData.length === 0) {
+            if (state.matchData.length === 0) {
                 addMatchForm();
                 return;
             }
             
-            matchData.forEach((match, index) => {
+            state.matchData.forEach((match, index) => {
                 container.appendChild(createMatchForm(match, index));
             });
         }
-        
+
         function createMatchForm(match, index) {
             const form = document.createElement('div');
-            form.className = 'match-enter bg-white rounded-xl p-6 shadow border border-gray-100';
+            form.className = 'match-enter bg-white rounded-xl p-6 shadow border border-gray-200';
+            
             form.innerHTML = `
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-gray-800">Match ${index + 1}</h3>
-                    <button onclick="removeMatch(${index})" 
-                            class="text-red-500 hover:text-red-700 p-1">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="moveMatchUp(${index})" ${index === 0 ? 'disabled' : ''} 
+                                class="p-1 text-gray-500 hover:text-primary ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button onclick="moveMatchDown(${index})" ${index === state.matchData.length - 1 ? 'disabled' : ''} 
+                                class="p-1 text-gray-500 hover:text-primary ${index === state.matchData.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button onclick="removeMatch(${index})" 
+                                class="p-1 text-gray-500 hover:text-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">League</label>
-                        <select id="league_${index}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <select id="league_${index}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                             ${getLeagueOptions(match.league)}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time (UTC)</label>
                         <input type="time" id="time_${index}" value="${match.time || '15:00'}" 
-                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Home Team</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Home Team*</label>
                         <input type="text" id="homeTeam_${index}" value="${match.homeTeam || ''}" 
-                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Away Team</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Away Team*</label>
                         <input type="text" id="awayTeam_${index}" value="${match.awayTeam || ''}" 
-                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" required>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Market</label>
-                        <select id="tip_${index}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Market*</label>
+                        <select id="tip_${index}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                             ${getTipOptions(match.tip)}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Odds</label>
-                        <input type="number" step="0.01" id="odds_${index}" value="${match.odds || '1.75'}" 
-                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Odds*</label>
+                        <input type="number" step="0.01" min="1.01" id="odds_${index}" value="${match.odds || '1.75'}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" required>
                     </div>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confidence</label>
-                    <select id="confidence_${index}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confidence*</label>
+                    <select id="confidence_${index}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                         <option value="High" ${match.confidence === 'High' ? 'selected' : ''}>High</option>
                         <option value="Medium" ${match.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
                         <option value="Very High" ${match.confidence === 'Very High' ? 'selected' : ''}>Very High</option>
                     </select>
                 </div>
             `;
+            
             return form;
         }
-        
+
         function getLeagueOptions(selected) {
             const leagues = [
                 'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 
@@ -269,7 +353,7 @@
                 `<option value="${league}" ${league === selected ? 'selected' : ''}>${league}</option>`
             ).join('');
         }
-        
+
         function getTipOptions(selected) {
             const tips = [
                 'Over 1.5 Goals', 'Under 1.5 Goals', 'Over 2.5 Goals', 'Under 2.5 Goals',
@@ -281,7 +365,7 @@
                 `<option value="${tip}" ${tip === selected ? 'selected' : ''}>${tip}</option>`
             ).join('');
         }
-        
+
         function addMatchForm() {
             const newMatch = {
                 league: "Premier League",
@@ -292,43 +376,60 @@
                 odds: "1.75",
                 confidence: "High"
             };
-            matchData.push(newMatch);
+            state.matchData.push(newMatch);
             generateMatchForms();
             scrollToBottom();
         }
-        
+
         function removeMatch(index) {
-            if (matchData.length <= 1) {
+            if (state.matchData.length <= 1) {
                 alert("You must have at least one match!");
                 return;
             }
             if (confirm("Delete this match?")) {
-                matchData.splice(index, 1);
+                state.matchData.splice(index, 1);
                 generateMatchForms();
             }
         }
-        
+
+        function moveMatchUp(index) {
+            if (index > 0) {
+                const temp = state.matchData[index];
+                state.matchData[index] = state.matchData[index - 1];
+                state.matchData[index - 1] = temp;
+                generateMatchForms();
+            }
+        }
+
+        function moveMatchDown(index) {
+            if (index < state.matchData.length - 1) {
+                const temp = state.matchData[index];
+                state.matchData[index] = state.matchData[index + 1];
+                state.matchData[index + 1] = temp;
+                generateMatchForms();
+            }
+        }
+
         function scrollToBottom() {
             window.scrollTo({
                 top: document.body.scrollHeight,
                 behavior: 'smooth'
             });
         }
-        
-        // Data Upload Functions
+
+        // ===== DATA PUBLISHING ===== //
         async function forceUpload() {
-            if (!githubToken) {
-                alert("Please authenticate with GitHub first!");
-                document.getElementById('tokenModal').classList.remove('hidden');
+            if (!state.githubToken) {
+                showStatus('Please authenticate with GitHub first', 'error');
+                showTokenModal();
                 return;
             }
             
-            const statusEl = document.getElementById('uploadStatus');
-            statusEl.className = 'hidden';
-            
-            // Validate all fields first
+            // Validate all fields
             const newMatchData = [];
-            for (let i = 0; i < matchData.length; i++) {
+            let isValid = true;
+            
+            for (let i = 0; i < state.matchData.length; i++) {
                 const league = document.getElementById(`league_${i}`)?.value;
                 const homeTeam = document.getElementById(`homeTeam_${i}`)?.value.trim();
                 const awayTeam = document.getElementById(`awayTeam_${i}`)?.value.trim();
@@ -337,16 +438,23 @@
                 const odds = parseFloat(document.getElementById(`odds_${i}`)?.value);
                 const confidence = document.getElementById(`confidence_${i}`)?.value;
                 
-                if (!homeTeam || !awayTeam || isNaN(odds) || odds < 1) {
-                    const errorMsg = !homeTeam || !awayTeam ? 
-                        `Teams missing in Match ${i+1}` : 
-                        `Invalid odds in Match ${i+1}`;
-                    showStatus(errorMsg, 'error');
-                    return;
+                // Validation
+                if (!homeTeam || !awayTeam) {
+                    showStatus(`Error: Missing team names in Match ${i + 1}`, 'error');
+                    isValid = false;
+                    break;
+                }
+                
+                if (isNaN(odds) {
+                    showStatus(`Error: Invalid odds in Match ${i + 1}`, 'error');
+                    isValid = false;
+                    break;
                 }
                 
                 newMatchData.push({ league, homeTeam, awayTeam, time, tip, odds, confidence });
             }
+            
+            if (!isValid) return;
             
             // Prepare data for GitHub
             const tipsData = {
@@ -357,29 +465,29 @@
             showStatus('Uploading to GitHub...', 'verification');
             
             try {
-                // First try to get the existing file (to get SHA)
+                // 1. Get existing file SHA (if exists)
                 let fileSha = null;
-                const getUrl = `https://api.github.com/repos/${REPO}/contents/${FILE_PATH}?ref=${BRANCH}`;
-                const getResponse = await fetch(getUrl, {
-                    headers: { 
-                        'Authorization': `token ${githubToken}`,
-                        'Accept': 'application/vnd.github.v3+json'
+                try {
+                    const getResponse = await fetch(`https://api.github.com/repos/${CONFIG.REPO}/contents/${CONFIG.FILE_PATH}`, {
+                        headers: { 
+                            'Authorization': `token ${state.githubToken}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (getResponse.ok) {
+                        const fileInfo = await getResponse.json();
+                        fileSha = fileInfo.sha;
                     }
-                });
-                
-                if (getResponse.ok) {
-                    const fileInfo = await getResponse.json();
-                    fileSha = fileInfo.sha;
-                } else if (getResponse.status !== 404) {
-                    throw new Error(`GitHub error: ${getResponse.status}`);
+                } catch (e) {
+                    console.log('No existing file found, will create new');
                 }
                 
-                // Create or update the file
-                const uploadUrl = `https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`;
-                const uploadResponse = await fetch(uploadUrl, {
+                // 2. Upload new content
+                const uploadResponse = await fetch(`https://api.github.com/repos/${CONFIG.REPO}/contents/${CONFIG.FILE_PATH}`, {
                     method: 'PUT',
                     headers: { 
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `token ${state.githubToken}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -387,38 +495,39 @@
                         message: `Update tips - ${new Date().toLocaleString()}`,
                         content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2))),
                         sha: fileSha,
-                        branch: BRANCH
+                        branch: CONFIG.BRANCH
                     })
                 });
                 
                 if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json();
-                    throw new Error(errorData.message || 'Upload failed');
+                    const error = await uploadResponse.json();
+                    throw new Error(error.message || 'Upload failed');
                 }
                 
                 // Success
                 showStatus('Successfully published to GitHub!', 'success');
-                matchData = newMatchData;
-                localStorage.setItem('matchData', JSON.stringify(matchData));
+                state.matchData = newMatchData;
+                localStorage.setItem('matchData', JSON.stringify(state.matchData));
                 
                 // Auto-verify after 2 seconds
                 setTimeout(verifyData, 2000);
                 
             } catch (error) {
                 console.error('Upload error:', error);
-                showStatus(`Failed to publish: ${error.message}`, 'error');
                 
-                // Special handling for common errors
+                let errorMessage = error.message;
                 if (error.message.includes("Bad credentials")) {
-                    showStatus('Invalid token - please re-authenticate', 'error');
+                    errorMessage = "Invalid token - please re-authenticate";
                     changeToken();
                 } else if (error.message.includes("not found")) {
-                    showStatus('Repository not found - check config', 'error');
+                    errorMessage = "Repository not found - check configuration";
                 }
+                
+                showStatus(`Publish failed: ${errorMessage}`, 'error');
             }
         }
-        
-        // Verification Functions
+
+        // ===== DATA VERIFICATION ===== //
         async function verifyData() {
             const verificationEl = document.getElementById('verificationSection');
             const serverDataEl = document.getElementById('serverData');
@@ -429,19 +538,21 @@
             verificationEl.classList.remove('hidden');
             
             try {
-                const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`;
+                const rawUrl = `https://raw.githubusercontent.com/${CONFIG.REPO}/${CONFIG.BRANCH}/${CONFIG.FILE_PATH}?t=${Date.now()}`;
                 const response = await fetch(rawUrl);
                 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: HTTP ${response.status}`);
+                }
                 
                 const serverData = await response.json();
                 
-                // Format the JSON display with syntax highlighting
+                // Display formatted JSON
                 serverDataEl.innerHTML = syntaxHighlight(serverData);
                 
                 // Check match count
                 const serverMatchCount = serverData.matches?.length || 0;
-                const localMatchCount = matchData.length;
+                const localMatchCount = state.matchData.length;
                 
                 matchCountEl.innerHTML = `
                     <span class="font-semibold">Server:</span> ${serverMatchCount} matches | 
@@ -452,7 +563,7 @@
                     dataMatchEl.innerHTML = '<span class="text-red-600 font-bold">❌ Count mismatch</span>';
                 } else {
                     // Deep comparison
-                    const isIdentical = JSON.stringify(serverData.matches) === JSON.stringify(matchData);
+                    const isIdentical = JSON.stringify(serverData.matches) === JSON.stringify(state.matchData);
                     dataMatchEl.innerHTML = isIdentical 
                         ? '<span class="text-green-600 font-bold">✅ Perfect match</span>'
                         : '<span class="text-yellow-600 font-bold">⚠️ Content differs</span>';
@@ -466,12 +577,12 @@
                 dataMatchEl.textContent = '';
             }
         }
-        
+
         function hideVerification() {
             document.getElementById('verificationSection').classList.add('hidden');
         }
-        
-        // Helper Functions
+
+        // ===== UTILITIES ===== //
         function showStatus(message, type) {
             const statusEl = document.getElementById('uploadStatus');
             statusEl.innerHTML = `
@@ -481,10 +592,10 @@
                 </div>
             `;
             statusEl.className = `p-4 rounded-lg mb-6 flex items-center ${
-                type === 'success' ? 'bg-green-100 text-green-800' :
-                type === 'error' ? 'bg-red-100 text-red-800' :
-                'bg-yellow-100 text-yellow-800'
-            }`;
+                type === 'success' ? 'bg-green-100 text-green-800 border-green-200' :
+                type === 'error' ? 'bg-red-100 text-red-800 border-red-200' :
+                'bg-yellow-100 text-yellow-800 border-yellow-200'
+            } border`;
             statusEl.classList.remove('hidden');
             
             // Auto-hide success messages after 5 seconds
@@ -494,7 +605,7 @@
                 }, 5000);
             }
         }
-        
+
         function syntaxHighlight(json) {
             if (typeof json === 'string') {
                 try {
