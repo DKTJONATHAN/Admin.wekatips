@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weka Tips Admin</title>
-    <!-- Tailwind CSS -->
+    <title>Admin.wekatips - Management Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Custom styles */
         .match-enter { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } }
+        
+        #serverData {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
     <!-- Token Modal -->
-    <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 class="text-xl font-bold mb-4">GitHub Authentication</h2>
-            <p class="text-gray-600 mb-4">Enter your GitHub Personal Access Token:</p>
+            <p class="text-gray-600 mb-2">Enter your GitHub Personal Access Token:</p>
+            <p class="text-xs text-gray-500 mb-3">(Requires <code class="bg-gray-100 px-1">repo</code> permissions)</p>
             <input type="password" id="githubToken" placeholder="ghp_yourTokenHere" 
-                   class="w-full px-4 py-2 border rounded-lg mb-4">
+                   class="w-full px-4 py-2 border rounded-lg mb-4 font-mono text-sm">
             <div class="flex justify-end gap-2">
                 <button onclick="saveToken()" 
                         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
@@ -35,18 +38,24 @@
     <!-- Main Admin Panel -->
     <div class="container mx-auto px-4 py-8">
         <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 mb-8 shadow-lg">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="flex items-center space-x-4">
-                    <i class="fas fa-futbol text-3xl"></i>
+                    <i class="fas fa-lock text-3xl"></i>
                     <div>
-                        <h1 class="text-2xl font-bold">Weka Tips Admin</h1>
-                        <p class="text-blue-100">Manage Daily Betting Tips</p>
+                        <h1 class="text-2xl font-bold">Admin.wekatips</h1>
+                        <p class="text-blue-100">DKTJONATHAN Management Panel</p>
                     </div>
                 </div>
-                <button onclick="verifyData()" 
-                        class="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition">
-                    <i class="fas fa-sync-alt mr-2"></i> Verify Data
-                </button>
+                <div class="flex gap-3">
+                    <button onclick="verifyData()" 
+                            class="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 transition">
+                        <i class="fas fa-sync-alt mr-2"></i> Verify Data
+                    </button>
+                    <button onclick="window.open('https://dktjonathan.github.io/wekatips', '_blank')" 
+                            class="px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition">
+                        <i class="fas fa-external-link-alt mr-2"></i> View Site
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -55,11 +64,11 @@
 
         <!-- Token Status -->
         <div id="tokenStatusBar" class="hidden bg-blue-50 text-blue-800 p-3 rounded-lg mb-6 flex justify-between items-center">
-            <div>
+            <div class="flex items-center">
                 <i class="fas fa-check-circle mr-2"></i>
                 <span>Authenticated with GitHub</span>
             </div>
-            <button onclick="changeToken()" class="text-blue-600 hover:text-blue-800 text-sm">
+            <button onclick="changeToken()" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
                 <i class="fas fa-redo mr-1"></i> Change Token
             </button>
         </div>
@@ -68,43 +77,45 @@
         <div id="matchForms" class="space-y-6"></div>
 
         <!-- Action Buttons -->
-        <div class="fixed bottom-6 right-6 space-x-4">
+        <div class="fixed bottom-6 right-6 flex flex-col gap-3">
             <button onclick="addMatchForm()" 
-                    class="px-5 py-3 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition">
-                <i class="fas fa-plus"></i> Add Match
+                    class="p-4 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition flex items-center justify-center">
+                <i class="fas fa-plus text-xl"></i>
             </button>
             <button onclick="forceUpload()" 
-                    class="px-5 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition">
-                <i class="fas fa-cloud-upload-alt"></i> Publish
+                    class="p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center">
+                <i class="fas fa-cloud-upload-alt text-xl"></i>
             </button>
         </div>
 
         <!-- Verification Section -->
         <div id="verificationSection" class="hidden mt-12 bg-gray-50 p-6 rounded-xl border border-gray-200">
-            <h3 class="text-lg font-bold mb-4">Server Data Verification</h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Server Data Verification</h3>
+                <button onclick="hideVerification()" 
+                        class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             <div class="mb-4">
                 <span id="matchCountStatus" class="font-medium"></span>
                 <span id="dataMatchStatus" class="ml-4"></span>
             </div>
-            <pre id="serverData" class="bg-white p-4 rounded-lg overflow-auto max-h-80 text-sm"></pre>
-            <div class="mt-4 flex justify-end space-x-3">
+            <pre id="serverData" class="bg-white p-4 rounded-lg overflow-auto max-h-80 text-sm border border-gray-200"></pre>
+            <div class="mt-4 flex justify-end">
                 <button onclick="verifyData()" 
                         class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
-                    Refresh
-                </button>
-                <button onclick="hideVerification()" 
-                        class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
-                    Close
+                    <i class="fas fa-sync-alt mr-2"></i> Refresh
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuration
-        const REPO = 'your-username/your-repo-name';
-        const FILE_PATH = 'data/tips.json';
-        const BRANCH = 'main';
+        // Configuration - MUST UPDATE THESE
+        const REPO = 'DKTJONATHAN/wekatips';       // Your repository
+        const FILE_PATH = 'data/tips.json';        // Path to tips file
+        const BRANCH = 'main';                    // Branch to use
         
         // State
         let matchData = JSON.parse(localStorage.getItem('matchData')) || [];
@@ -130,8 +141,14 @@
                 return;
             }
             
+            // Basic token validation
+            if (!githubToken.startsWith('ghp_') || githubToken.length < 30) {
+                showTokenStatus('Invalid token format', 'red');
+                return;
+            }
+            
             localStorage.setItem('githubToken', githubToken);
-            showTokenStatus('Token saved successfully!', 'green');
+            showTokenStatus('✓ Token saved successfully!', 'green');
             
             setTimeout(() => {
                 document.getElementById('tokenModal').classList.add('hidden');
@@ -140,10 +157,12 @@
         }
         
         function changeToken() {
-            localStorage.removeItem('githubToken');
-            githubToken = '';
-            document.getElementById('tokenModal').classList.remove('hidden');
-            document.getElementById('tokenStatusBar').classList.add('hidden');
+            if (confirm('Change GitHub token? This will require re-authentication.')) {
+                localStorage.removeItem('githubToken');
+                githubToken = '';
+                document.getElementById('tokenModal').classList.remove('hidden');
+                document.getElementById('tokenStatusBar').classList.add('hidden');
+            }
         }
         
         function showTokenStatus(message, color) {
@@ -154,6 +173,10 @@
         
         function initAdminPanel() {
             document.getElementById('tokenStatusBar').classList.remove('hidden');
+            // Enable admin features
+            document.querySelectorAll('.admin-feature').forEach(el => {
+                el.disabled = false;
+            });
         }
         
         // Match Form Functions
@@ -173,12 +196,12 @@
         
         function createMatchForm(match, index) {
             const form = document.createElement('div');
-            form.className = 'match-enter bg-white rounded-xl p-6 shadow';
+            form.className = 'match-enter bg-white rounded-xl p-6 shadow border border-gray-100';
             form.innerHTML = `
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold">Match ${index + 1}</h3>
+                    <h3 class="text-lg font-bold text-gray-800">Match ${index + 1}</h3>
                     <button onclick="removeMatch(${index})" 
-                            class="text-red-500 hover:text-red-700">
+                            class="text-red-500 hover:text-red-700 p-1">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -186,14 +209,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">League</label>
-                        <select id="league_${index}" class="w-full px-3 py-2 border rounded-lg">
+                        <select id="league_${index}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             ${getLeagueOptions(match.league)}
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
                         <input type="time" id="time_${index}" value="${match.time || '15:00'}" 
-                               class="w-full px-3 py-2 border rounded-lg">
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
                 
@@ -201,32 +224,32 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Home Team</label>
                         <input type="text" id="homeTeam_${index}" value="${match.homeTeam || ''}" 
-                               class="w-full px-3 py-2 border rounded-lg" required>
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Away Team</label>
                         <input type="text" id="awayTeam_${index}" value="${match.awayTeam || ''}" 
-                               class="w-full px-3 py-2 border rounded-lg" required>
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Market</label>
-                        <select id="tip_${index}" class="w-full px-3 py-2 border rounded-lg">
+                        <select id="tip_${index}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             ${getTipOptions(match.tip)}
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Odds</label>
-                        <input type="text" id="odds_${index}" value="${match.odds || '1.75'}" 
-                               class="w-full px-3 py-2 border rounded-lg" required>
+                        <input type="number" step="0.01" id="odds_${index}" value="${match.odds || '1.75'}" 
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                     </div>
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Confidence</label>
-                    <select id="confidence_${index}" class="w-full px-3 py-2 border rounded-lg">
+                    <select id="confidence_${index}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="High" ${match.confidence === 'High' ? 'selected' : ''}>High</option>
                         <option value="Medium" ${match.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
                         <option value="Very High" ${match.confidence === 'Very High' ? 'selected' : ''}>Very High</option>
@@ -239,7 +262,8 @@
         function getLeagueOptions(selected) {
             const leagues = [
                 'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 
-                'Ligue 1', 'Champions League', 'Europa League', 'Other Leagues'
+                'Ligue 1', 'Champions League', 'Europa League', 'Conference League',
+                'MLS', 'Brazil Serie A', 'Other Leagues'
             ];
             return leagues.map(league => 
                 `<option value="${league}" ${league === selected ? 'selected' : ''}>${league}</option>`
@@ -250,7 +274,8 @@
             const tips = [
                 'Over 1.5 Goals', 'Under 1.5 Goals', 'Over 2.5 Goals', 'Under 2.5 Goals',
                 'Over 3.5 Goals', 'Under 3.5 Goals', 'Home Win (1X2)', 'Draw (1X2)', 
-                'Away Win (1X2)', 'BTTS - Yes', 'BTTS - No'
+                'Away Win (1X2)', 'BTTS - Yes', 'BTTS - No', 'Home Win & Over 2.5',
+                'Away Win & BTTS', 'Double Chance', 'Correct Score'
             ];
             return tips.map(tip => 
                 `<option value="${tip}" ${tip === selected ? 'selected' : ''}>${tip}</option>`
@@ -277,8 +302,10 @@
                 alert("You must have at least one match!");
                 return;
             }
-            matchData.splice(index, 1);
-            generateMatchForms();
+            if (confirm("Delete this match?")) {
+                matchData.splice(index, 1);
+                generateMatchForms();
+            }
         }
         
         function scrollToBottom() {
@@ -299,52 +326,57 @@
             const statusEl = document.getElementById('uploadStatus');
             statusEl.className = 'hidden';
             
-            // Collect match data
+            // Validate all fields first
             const newMatchData = [];
             for (let i = 0; i < matchData.length; i++) {
                 const league = document.getElementById(`league_${i}`)?.value;
-                const homeTeam = document.getElementById(`homeTeam_${i}`)?.value;
-                const awayTeam = document.getElementById(`awayTeam_${i}`)?.value;
+                const homeTeam = document.getElementById(`homeTeam_${i}`)?.value.trim();
+                const awayTeam = document.getElementById(`awayTeam_${i}`)?.value.trim();
                 const time = document.getElementById(`time_${i}`)?.value;
                 const tip = document.getElementById(`tip_${i}`)?.value;
-                const odds = document.getElementById(`odds_${i}`)?.value;
+                const odds = parseFloat(document.getElementById(`odds_${i}`)?.value);
                 const confidence = document.getElementById(`confidence_${i}`)?.value;
                 
-                if (!homeTeam || !awayTeam) {
-                    showStatus(`Please fill in all fields for Match ${i + 1}`, 'error');
+                if (!homeTeam || !awayTeam || isNaN(odds) || odds < 1) {
+                    const errorMsg = !homeTeam || !awayTeam ? 
+                        `Teams missing in Match ${i+1}` : 
+                        `Invalid odds in Match ${i+1}`;
+                    showStatus(errorMsg, 'error');
                     return;
                 }
                 
                 newMatchData.push({ league, homeTeam, awayTeam, time, tip, odds, confidence });
             }
             
-            matchData = newMatchData;
-            localStorage.setItem('matchData', JSON.stringify(matchData));
-            
             // Prepare data for GitHub
             const tipsData = {
-                matches: matchData,
+                matches: newMatchData,
                 updatedAt: new Date().toISOString()
             };
             
             showStatus('Uploading to GitHub...', 'verification');
             
             try {
-                // Get current file SHA
-                const getFile = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}?ref=${BRANCH}`, {
+                // First try to get the existing file (to get SHA)
+                let fileSha = null;
+                const getUrl = `https://api.github.com/repos/${REPO}/contents/${FILE_PATH}?ref=${BRANCH}`;
+                const getResponse = await fetch(getUrl, {
                     headers: { 
                         'Authorization': `token ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
                 
-                if (!getFile.ok) throw new Error(`GitHub error: ${getFile.status}`);
+                if (getResponse.ok) {
+                    const fileInfo = await getResponse.json();
+                    fileSha = fileInfo.sha;
+                } else if (getResponse.status !== 404) {
+                    throw new Error(`GitHub error: ${getResponse.status}`);
+                }
                 
-                const fileInfo = await getFile.json();
-                const fileSha = fileInfo.sha;
-                
-                // Upload new content
-                const response = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+                // Create or update the file
+                const uploadUrl = `https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`;
+                const uploadResponse = await fetch(uploadUrl, {
                     method: 'PUT',
                     headers: { 
                         'Authorization': `token ${githubToken}`,
@@ -353,23 +385,36 @@
                     },
                     body: JSON.stringify({
                         message: `Update tips - ${new Date().toLocaleString()}`,
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2)))),
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2))),
                         sha: fileSha,
                         branch: BRANCH
                     })
                 });
                 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Upload failed');
+                if (!uploadResponse.ok) {
+                    const errorData = await uploadResponse.json();
+                    throw new Error(errorData.message || 'Upload failed');
                 }
                 
-                showStatus('Successfully updated tips on GitHub!', 'success');
-                setTimeout(verifyData, 1500);
+                // Success
+                showStatus('Successfully published to GitHub!', 'success');
+                matchData = newMatchData;
+                localStorage.setItem('matchData', JSON.stringify(matchData));
+                
+                // Auto-verify after 2 seconds
+                setTimeout(verifyData, 2000);
                 
             } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
                 console.error('Upload error:', error);
+                showStatus(`Failed to publish: ${error.message}`, 'error');
+                
+                // Special handling for common errors
+                if (error.message.includes("Bad credentials")) {
+                    showStatus('Invalid token - please re-authenticate', 'error');
+                    changeToken();
+                } else if (error.message.includes("not found")) {
+                    showStatus('Repository not found - check config', 'error');
+                }
             }
         }
         
@@ -384,17 +429,24 @@
             verificationEl.classList.remove('hidden');
             
             try {
-                const response = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`);
-                if (!response.ok) throw new Error('Server error: ' + response.status);
+                const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`;
+                const response = await fetch(rawUrl);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const serverData = await response.json();
-                serverDataEl.textContent = JSON.stringify(serverData, null, 2);
+                
+                // Format the JSON display with syntax highlighting
+                serverDataEl.innerHTML = syntaxHighlight(serverData);
                 
                 // Check match count
                 const serverMatchCount = serverData.matches?.length || 0;
                 const localMatchCount = matchData.length;
                 
-                matchCountEl.innerHTML = `Server: <span class="font-bold">${serverMatchCount}</span> matches | Local: <span class="font-bold">${localMatchCount}</span> matches`;
+                matchCountEl.innerHTML = `
+                    <span class="font-semibold">Server:</span> ${serverMatchCount} matches | 
+                    <span class="font-semibold">Local:</span> ${localMatchCount} matches
+                `;
                 
                 if (serverMatchCount !== localMatchCount) {
                     dataMatchEl.innerHTML = '<span class="text-red-600 font-bold">❌ Count mismatch</span>';
@@ -407,6 +459,7 @@
                 }
                 
             } catch (error) {
+                console.error('Verification error:', error);
                 showStatus(`Verification failed: ${error.message}`, 'error');
                 serverDataEl.textContent = 'Could not load server data';
                 matchCountEl.textContent = '';
@@ -421,13 +474,42 @@
         // Helper Functions
         function showStatus(message, type) {
             const statusEl = document.getElementById('uploadStatus');
-            statusEl.textContent = message;
-            statusEl.className = `p-4 rounded-lg mb-6 ${
+            statusEl.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-sync-alt fa-spin'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            statusEl.className = `p-4 rounded-lg mb-6 flex items-center ${
                 type === 'success' ? 'bg-green-100 text-green-800' :
                 type === 'error' ? 'bg-red-100 text-red-800' :
                 'bg-yellow-100 text-yellow-800'
             }`;
             statusEl.classList.remove('hidden');
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.classList.add('hidden');
+                }, 5000);
+            }
+        }
+        
+        function syntaxHighlight(json) {
+            if (typeof json === 'string') {
+                try {
+                    json = JSON.parse(json);
+                } catch (e) {
+                    return json;
+                }
+            }
+            
+            const jsonStr = JSON.stringify(json, null, 2);
+            return jsonStr
+                .replace(/("[\w]+":)/g, '<span class="text-blue-600">$1</span>')
+                .replace(/(true|false|null)/g, '<span class="text-purple-600">$1</span>')
+                .replace(/(\d+\.\d+|\d+)/g, '<span class="text-green-600">$1</span>')
+                .replace(/(\[|\])/g, '<span class="text-gray-500">$1</span>');
         }
     </script>
 </body>
