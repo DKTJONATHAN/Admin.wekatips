@@ -44,7 +44,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Token Modal -->
-    <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+    <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4 hidden">
         <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800">GitHub Authentication</h2>
@@ -115,7 +115,9 @@
         </div>
 
         <!-- Match Forms Container -->
-        <div id="matchForms" class="space-y-6"></div>
+        <div id="matchForms" class="space-y-6">
+            <!-- Forms will be generated here -->
+        </div>
 
         <!-- Action Buttons -->
         <div class="fixed bottom-6 right-6 flex flex-col gap-3">
@@ -445,7 +447,7 @@
                     break;
                 }
                 
-                if (isNaN(odds) {
+                if (isNaN(odds)) {
                     showStatus(`Error: Invalid odds in Match ${i + 1}`, 'error');
                     isValid = false;
                     break;
@@ -493,7 +495,7 @@
                     },
                     body: JSON.stringify({
                         message: `Update tips - ${new Date().toLocaleString()}`,
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2))),
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2)))),
                         sha: fileSha,
                         branch: CONFIG.BRANCH
                     })
