@@ -19,6 +19,12 @@
     <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 class="text-xl font-bold mb-4">GitHub Authentication</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipster Name</label>
+                <input type="text" id="tipsterName" placeholder="Enter your tipster name" 
+                       class="w-full px-4 py-2 border rounded-lg mb-4">
+                <p class="text-xs text-gray-500">Leave blank to use "Pro Tipster"</p>
+            </div>
             <p class="text-gray-600 mb-4">Enter your GitHub Personal Access Token:</p>
             <input type="password" id="githubToken" placeholder="ghp_yourTokenHere" 
                    class="w-full px-4 py-2 border rounded-lg mb-4">
@@ -40,7 +46,7 @@
                     <i class="fas fa-futbol text-3xl"></i>
                     <div>
                         <h1 class="text-2xl font-bold">Weka Tips Admin</h1>
-                        <p class="text-blue-100">DKTJONATHAN Management Panel</p>
+                        <p class="text-blue-100" id="currentTipsterName">Management Panel</p>
                     </div>
                 </div>
                 <div class="flex gap-3">
@@ -63,21 +69,11 @@
         <div id="tokenStatusBar" class="hidden bg-blue-50 text-blue-800 p-3 rounded-lg mb-6 flex justify-between items-center">
             <div>
                 <i class="fas fa-check-circle mr-2"></i>
-                <span>Authenticated with GitHub</span>
+                <span id="authStatusText">Authenticated with GitHub</span>
             </div>
             <button onclick="changeToken()" class="text-blue-600 hover:text-blue-800 text-sm">
                 <i class="fas fa-redo mr-1"></i> Change Token
             </button>
-        </div>
-
-        <!-- Tipster Name Input -->
-        <div class="bg-white rounded-xl p-6 shadow mb-6">
-            <h3 class="text-lg font-bold mb-4">Tipster Information</h3>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tipster Name (Optional)</label>
-                <input type="text" id="tipsterName" placeholder="Leave blank for 'Pro Tipster'" 
-                       class="w-full px-3 py-2 border rounded-lg">
-            </div>
         </div>
 
         <!-- Match Forms Container -->
@@ -123,29 +119,35 @@
         const BRANCH = 'main';
 
         // State
-        let matchData = JSON.parse(localStorage.getItem('matchData')) || [];
+        let matchData = [];
         let githubToken = localStorage.getItem('githubToken') || '';
+        let tipsterName = localStorage.getItem('tipsterName') || '';
+        let allTipsData = [];
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            if (!githubToken) {
+            if (!githubToken || !tipsterName) {
                 document.getElementById('tokenModal').classList.remove('hidden');
             } else {
                 document.getElementById('tokenStatusBar').classList.remove('hidden');
-            }
-            generateMatchForms();
-            
-            // Load tipster name if exists
-            const tipsterName = localStorage.getItem('tipsterName');
-            if (tipsterName) {
-                document.getElementById('tipsterName').value = tipsterName;
+                updateTipsterDisplay();
+                loadTipsData();
             }
         });
+
+        // Update tipster name display
+        function updateTipsterDisplay() {
+            document.getElementById('currentTipsterName').textContent = `${tipsterName} Management Panel`;
+            document.getElementById('authStatusText').textContent = `Authenticated as ${tipsterName}`;
+        }
 
         // Token Functions
         function saveToken() {
             const tokenInput = document.getElementById('githubToken');
             githubToken = tokenInput.value.trim();
+            
+            const nameInput = document.getElementById('tipsterName');
+            tipsterName = nameInput.value.trim() || 'Pro Tipster';
 
             if (!githubToken) {
                 showTokenStatus('Please enter a valid token', 'red');
@@ -158,25 +160,69 @@
             }
 
             localStorage.setItem('githubToken', githubToken);
-            showTokenStatus('Token saved successfully!', 'green');
+            localStorage.setItem('tipsterName', tipsterName);
+            showTokenStatus('Token and name saved successfully!', 'green');
 
             setTimeout(() => {
                 document.getElementById('tokenModal').classList.add('hidden');
                 document.getElementById('tokenStatusBar').classList.remove('hidden');
+                updateTipsterDisplay();
+                loadTipsData();
             }, 1000);
         }
 
         function changeToken() {
             localStorage.removeItem('githubToken');
+            localStorage.removeItem('tipsterName');
             githubToken = '';
+            tipsterName = '';
             document.getElementById('tokenModal').classList.remove('hidden');
             document.getElementById('tokenStatusBar').classList.add('hidden');
+            document.getElementById('tipsterName').value = '';
+            matchData = [];
+            generateMatchForms();
         }
 
         function showTokenStatus(message, color) {
             const statusEl = document.getElementById('tokenStatus');
             statusEl.textContent = message;
             statusEl.className = `mt-3 text-sm text-${color}-600`;
+        }
+
+        // Load tips data from GitHub
+        async function loadTipsData() {
+            try {
+                const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`;
+                const response = await fetch(rawUrl);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: HTTP ${response.status}`);
+                }
+
+                const serverData = await response.json();
+                allTipsData = serverData.matches || [];
+                
+                // Filter to only show current tipster's tips
+                const now = new Date();
+                matchData = allTipsData.filter(match => {
+                    // Only show matches from this tipster
+                    const isOwnMatch = match.tipster === tipsterName;
+                    
+                    // Filter out matches older than 24 hours
+                    const matchDate = new Date(match.createdAt);
+                    const hoursDiff = (now - matchDate) / (1000 * 60 * 60);
+                    const isRecent = hoursDiff <= 24;
+                    
+                    return isOwnMatch && isRecent;
+                });
+
+                generateMatchForms();
+            } catch (error) {
+                console.error('Error loading tips:', error);
+                // Start with empty array if no data exists
+                matchData = [];
+                generateMatchForms();
+            }
         }
 
         // Match Form Functions
@@ -301,14 +347,15 @@
                 tip: "Over 2.5 Goals",
                 odds: "1.75",
                 confidence: "High",
-                createdAt: new Date().toISOString() // Add creation timestamp
+                tipster: tipsterName,
+                createdAt: new Date().toISOString()
             };
-            
-            // Add new match at the beginning of the array
-            matchData.unshift(newMatch);
+            matchData.unshift(newMatch); // Add to beginning instead of end
             generateMatchForms();
-            
-            // Scroll to the top to show the newly added match
+            scrollToTop();
+        }
+
+        function scrollToTop() {
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'
@@ -348,10 +395,6 @@
                 return;
             }
 
-            // Get tipster name
-            const tipsterName = document.getElementById('tipsterName').value.trim();
-            localStorage.setItem('tipsterName', tipsterName || 'Pro Tipster');
-
             // Validate all fields
             const newMatchData = [];
             let isValid = true;
@@ -364,6 +407,7 @@
                 const tip = document.getElementById(`tip_${i}`)?.value;
                 const odds = parseFloat(document.getElementById(`odds_${i}`)?.value);
                 const confidence = document.getElementById(`confidence_${i}`)?.value;
+                const createdAt = matchData[i].createdAt || new Date().toISOString();
 
                 // Validation
                 if (!homeTeam || !awayTeam) {
@@ -386,30 +430,31 @@
                     tip, 
                     odds, 
                     confidence,
-                    createdAt: matchData[i].createdAt || new Date().toISOString() // Preserve creation time
+                    tipster: tipsterName,
+                    createdAt
                 });
             }
 
             if (!isValid) return;
 
-            // Filter out tips older than 24 hours
+            // Filter out tips older than 24 hours from all tips
             const now = new Date();
-            const filteredMatches = newMatchData.filter(match => {
+            const filteredAllTips = allTipsData.filter(match => {
                 const matchDate = new Date(match.createdAt);
                 const hoursDiff = (now - matchDate) / (1000 * 60 * 60);
                 return hoursDiff <= 24;
             });
 
-            if (filteredMatches.length < newMatchData.length) {
-                const removedCount = newMatchData.length - filteredMatches.length;
-                showStatus(`Automatically removed ${removedCount} tip(s) older than 24 hours`, 'verification');
-            }
+            // Combine all tips (keeping other tipsters' recent tips)
+            const combinedTips = [
+                ...filteredAllTips.filter(match => match.tipster !== tipsterName),
+                ...newMatchData
+            ];
 
             // Prepare data for GitHub
             const tipsData = {
-                matches: filteredMatches,
-                updatedAt: new Date().toISOString(),
-                tipster: tipsterName || 'Pro Tipster'
+                matches: combinedTips,
+                updatedAt: new Date().toISOString()
             };
 
             showStatus('Uploading to GitHub...', 'verification');
@@ -443,7 +488,7 @@
                     },
                     body: JSON.stringify({
                         message: `Update tips - ${new Date().toLocaleString()}`,
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2))),
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tipsData, null, 2)))),
                         sha: fileSha,
                         branch: BRANCH
                     })
@@ -456,7 +501,8 @@
 
                 // Success
                 showStatus('Successfully published to GitHub!', 'success');
-                matchData = filteredMatches;
+                allTipsData = combinedTips;
+                matchData = newMatchData;
                 localStorage.setItem('matchData', JSON.stringify(matchData));
 
                 // Auto-verify after 2 seconds
@@ -496,12 +542,26 @@
                 }
 
                 const serverData = await response.json();
+                allTipsData = serverData.matches || [];
+                
+                // Filter to only show current tipster's recent tips
+                const now = new Date();
+                const filteredMatches = allTipsData.filter(match => {
+                    const isOwnMatch = match.tipster === tipsterName;
+                    const matchDate = new Date(match.createdAt);
+                    const hoursDiff = (now - matchDate) / (1000 * 60 * 60);
+                    return isOwnMatch && hoursDiff <= 24;
+                });
 
-                // Display formatted JSON
-                serverDataEl.innerHTML = syntaxHighlight(serverData);
+                // Display formatted JSON (only showing current tipster's data)
+                const displayData = {
+                    ...serverData,
+                    matches: filteredMatches
+                };
+                serverDataEl.innerHTML = syntaxHighlight(displayData);
 
                 // Check match count
-                const serverMatchCount = serverData.matches?.length || 0;
+                const serverMatchCount = filteredMatches.length;
                 const localMatchCount = matchData.length;
 
                 matchCountEl.innerHTML = `
@@ -513,7 +573,7 @@
                     dataMatchEl.innerHTML = '<span class="text-red-600 font-bold">❌ Count mismatch</span>';
                 } else {
                     // Deep comparison
-                    const isIdentical = JSON.stringify(serverData.matches) === JSON.stringify(matchData);
+                    const isIdentical = JSON.stringify(filteredMatches) === JSON.stringify(matchData);
                     dataMatchEl.innerHTML = isIdentical 
                         ? '<span class="text-green-600 font-bold">✅ Perfect match</span>'
                         : '<span class="text-yellow-600 font-bold">⚠️ Content differs</span>';
