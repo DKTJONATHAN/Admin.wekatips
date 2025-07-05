@@ -249,7 +249,7 @@
             container.innerHTML = '';
 
             if (matchData.length === 0) {
-                addMatchForm();
+                // Don't auto-create a match, leave form empty
                 return;
             }
 
@@ -381,9 +381,17 @@
         }
 
         function removeMatch(index) {
-            if (confirm("Delete this match?")) {
+            if (confirm("Are you sure you want to delete this match? This will immediately remove it from the main site.")) {
                 matchData.splice(index, 1);
-                generateMatchForms();
+                
+                if (matchData.length === 0) {
+                    document.getElementById('matchForms').innerHTML = '';
+                } else {
+                    generateMatchForms();
+                }
+                
+                // Force immediate upload to update the main site
+                forceUpload();
             }
         }
 
@@ -409,7 +417,7 @@
                 return;
             }
 
-            // Validate all fields
+            // Prepare data - even if empty
             const newMatchData = [];
             let isValid = true;
 
@@ -423,17 +431,19 @@
                 const confidence = document.getElementById(`confidence_${i}`)?.value;
                 const createdAt = matchData[i].createdAt || new Date().toISOString();
 
-                // Validation
-                if (!homeTeam || !awayTeam) {
-                    showStatus(`Error: Missing team names in Match ${i + 1}`, 'error');
-                    isValid = false;
-                    break;
-                }
+                // Validation only if there are matches
+                if (matchData.length > 0) {
+                    if (!homeTeam || !awayTeam) {
+                        showStatus(`Error: Missing team names in Match ${i + 1}`, 'error');
+                        isValid = false;
+                        break;
+                    }
 
-                if (isNaN(odds)) {
-                    showStatus(`Error: Invalid odds in Match ${i + 1}`, 'error');
-                    isValid = false;
-                    break;
+                    if (isNaN(odds)) {
+                        showStatus(`Error: Invalid odds in Match ${i + 1}`, 'error');
+                        isValid = false;
+                        break;
+                    }
                 }
 
                 newMatchData.push({ 
@@ -448,8 +458,6 @@
                     createdAt
                 });
             }
-
-            if (!isValid) return;
 
             // Filter out tips older than 24 hours from all tips
             const now = new Date();
@@ -471,7 +479,7 @@
                 updatedAt: new Date().toISOString()
             };
 
-            showStatus('Uploading to GitHub...', 'verification');
+            showStatus('Updating site data...', 'verification');
 
             try {
                 // 1. Get existing file SHA (if exists)
