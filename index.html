@@ -145,10 +145,10 @@
         function saveToken() {
             const tokenInput = document.getElementById('githubToken');
             githubToken = tokenInput.value.trim();
-            
+
             const nameInput = document.getElementById('tipsterName');
             tipsterName = nameInput.value.trim();
-            
+
             const nameError = document.getElementById('nameError');
             const tokenError = document.getElementById('tokenError');
 
@@ -219,18 +219,18 @@
 
                 const serverData = await response.json();
                 allTipsData = serverData.matches || [];
-                
+
                 // Filter to only show current tipster's tips
                 const now = new Date();
                 matchData = allTipsData.filter(match => {
                     // Only show matches from this tipster
                     const isOwnMatch = match.tipster === tipsterName;
-                    
+
                     // Filter out matches older than 24 hours
                     const matchDate = new Date(match.createdAt);
                     const hoursDiff = (now - matchDate) / (1000 * 60 * 60);
                     const isRecent = hoursDiff <= 24;
-                    
+
                     return isOwnMatch && isRecent;
                 });
 
@@ -381,10 +381,6 @@
         }
 
         function removeMatch(index) {
-            if (matchData.length <= 1) {
-                alert("You must have at least one match!");
-                return;
-            }
             if (confirm("Delete this match?")) {
                 matchData.splice(index, 1);
                 generateMatchForms();
@@ -561,7 +557,7 @@
 
                 const serverData = await response.json();
                 allTipsData = serverData.matches || [];
-                
+
                 // Filter to only show current tipster's recent tips
                 const now = new Date();
                 const filteredMatches = allTipsData.filter(match => {
